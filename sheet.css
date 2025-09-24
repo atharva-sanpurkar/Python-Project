@@ -1,0 +1,74 @@
+body {
+  font-family: Arial, sans-serif;
+  background: #f8f9fa;
+  margin: 0;
+  padding: 0;
+  text-align: center;
+  color: #333;
+}
+
+header {
+  background: #003366; /* Deep Blue = One Piece ocean vibes */
+  color: white;
+  padding: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+header .logo {
+  height: 50px;
+  margin-right: 15px;
+}
+
+h1, h2 {
+  margin: 10px 0;
+}
+
+section {
+  /* Subtle anime-inspired gradient */
+  background: linear-gradient(135deg, #fdfbfb, #c9d6ff);
+  margin: 20px auto;
+  padding: 20px;
+  max-width: 900px;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+input, select, button {
+  padding: 8px;
+  margin: 5px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+}
+
+button {
+  background: #003366;
+  color: white;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+button:hover {
+  background: #00509e;
+  box-shadow: 0 0 10px rgba(0,0,0,0.2);
+}
+
+footer {
+  background: #003366;
+  color: white;
+  padding: 10px;
+  margin-top: 20px;
+  position: relative;
+}
+
+/* Hidden Anime Easter Egg */
+footer::after {
+  content: "Inherited Will ⚓ | Will of Fire 🔥 | Freedom ✊";
+  font-size: 0.7em;
+  color: rgba(255, 255, 255, 0.3); /* Very faint like AOT’s fading walls */
+  position: absolute;
+  bottom: 5px;
+  right: 10px;
+  font-style: italic;
+}

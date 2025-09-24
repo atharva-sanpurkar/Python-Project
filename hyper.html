@@ -1,0 +1,218 @@
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Student Marks Analyzer | Aurora University</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='sheet.css') }}">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <!-- Header -->
+  <header>
+    <img src="{{ url_for('static', filename='aurora_logo.png') }}" alt="Aurora Logo" class="logo">
+    <h1>Aurora University - Student Marks Analyzer & Rank Visualizer</h1>
+    <!-- "Inherited Will, Legacy of Generations" - One Piece vibe -->
+  </header>
+
+  <!-- Upload Section -->
+  <section class="upload">
+    <h2>Upload Marks CSV</h2>
+    <form id="uploadForm">
+      <input type="file" id="fileInput" name="file" accept=".csv" required>
+      <button type="submit">Upload</button>
+    </form>
+    <!-- Just like Naruto never gave up, make sure your CSV is valid :) -->
+  </section>
+
+  <!-- Graph Section -->
+  <section class="graph-container">
+    <h2 id="graphTitle">Overall Results</h2>
+    <canvas id="myChart"></canvas>
+    <!-- Walls can’t hold back truth – AOT -->
+  </section>
+
+  <!-- Export Section -->
+  <section class="export">
+    <h2>Export Reports</h2>
+    <div>
+      <label>Export Type:</label>
+      <select id="exportType">
+        <option value="all">Overall Report</option>
+        <option value="section">Section Report</option>
+        <option value="subject">Subject Report</option>
+        <option value="student">Student Report</option>
+      </select>
+
+      <input type="text" id="exportRoll" placeholder="Enter Roll No">
+      <select id="exportSection" style="display:none;">
+        <option value="">--Select Section--</option>
+        <option value="A">Section A (Ackerman)</option>
+        <option value="B">Section B (Binks' Sake)</option>
+        <option value="C">Section C (Chunin)</option>
+      </select>
+      <select id="exportSubject" style="display:none;">
+        <option value="">--Select Subject--</option>
+        <option value="DM">DM</option>
+        <option value="MEFA">MEFA</option>
+        <option value="DT">DT</option>
+        <option value="Python">Python</option>
+      </select>
+
+      <button onclick="downloadCSV()">Download CSV</button>
+    </div>
+  </section>
+
+  <!-- Filters -->
+  <section class="filters">
+    <h2>Filters</h2>
+    <div class="filter-group">
+      <label>Subject:</label>
+      <select id="subjectInput">
+        <option value="">--Select--</option>
+        <option value="DM">DM</option>
+        <option value="MEFA">MEFA</option>
+        <option value="DT">DT</option>
+        <option value="Python">Python</option>
+      </select>
+
+      <label>Section:</label>
+      <select id="sectionInput">
+        <option value="">--Select--</option>
+        <option value="A">Section A</option>
+        <option value="B">Section B</option>
+        <option value="C">Section C</option>
+      </select>
+
+      <label>Marks Range:</label>
+      <input type="number" id="lowRange" placeholder="Min (0)">
+      <input type="number" id="highRange" placeholder="Max (2000)">
+
+      <button type="button" onclick="applyFilter('all')">Show Filtered (All)</button>
+      <button type="button" onclick="applyFilter('topper')">Show Topper</button>
+    </div>
+  </section>
+
+  <!-- Student Search -->
+  <section class="student-search">
+    <h2>Student Graph</h2>
+    <input type="text" id="rollInput" placeholder="Enter Roll No">
+    <button onclick="getStudent()">Show Student Graph</button>
+    <!-- “Tatakae!” every student fights for marks -->
+  </section>
+
+  <!-- Footer -->
+    <!-- Footer -->
+  <footer>
+    <p>&copy; Aurora University | Student Marks Analyzer By LG 2</p>
+    <p class="anime-ref" style="font-size: 0.5em; color: #888; margin-top: 5px;">
+      “Inherited Will -One Piece, Will of Fire -Naruto, and the Cry for Freedom -AOT 
+      — may every student find their own path.”
+    </p>
+    <!-- “A lesson without pain is meaningless” – Fullmetal Alch... oh wait, wrong anime -->
+  </footer>
+
+
+  <script>
+    let chart;
+
+    // Upload handler
+    document.getElementById("uploadForm").onsubmit = async (e) => {
+      e.preventDefault();
+      let file = document.getElementById("fileInput").files[0];
+      let formData = new FormData();
+      formData.append("file", file);
+
+      let res = await fetch("/upload", { method: "POST", body: formData });
+      let data = await res.json();
+
+      if (data.error) { alert(data.error); return; }
+
+      let labels = data.students.map(d => d.Name);
+      let values = data.students.map(d => d.Total);
+      updateChart(labels, values, "Overall Results");
+    };
+
+    function updateChart(labels, values, title) {
+      if (chart) chart.destroy();
+      chart = new Chart(document.getElementById("myChart"), {
+        type: "bar",
+        data: {
+          labels: labels,
+          datasets: [{
+            label: "Marks",
+            data: values,
+            backgroundColor: "rgba(54, 162, 235, 0.6)" // Blue like the ocean of One Piece
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: { title: { display: true, text: title } }
+        }
+      });
+    }
+
+    async function applyFilter(mode) {
+      let subject = document.getElementById("subjectInput").value;
+      let section = document.getElementById("sectionInput").value;
+      let low = document.getElementById("lowRange").value;
+      let high = document.getElementById("highRange").value;
+
+      let url = `/filter?mode=${mode}`;
+      if (subject) url += `&subject=${subject}`;
+      if (section) url += `&section=${section}`;
+      if (low && high) url += `&low=${low}&high=${high}`;
+
+      let res = await fetch(url);
+      let data = await res.json();
+      if (data.error) { alert(data.error); return; }
+
+      if (mode === "topper") {
+        let label = subject ? data[subject] : data.Total;
+        updateChart([data.Name], [label],
+          `Topper ${subject ? "in " + subject : "Overall"}${section ? " (Section " + section + ")" : ""}`);
+      } else {
+        let labels = subject ? data.map(d => d.Name) : data.map(d => d.Name);
+        let values = subject ? data.map(d => d[subject]) : data.map(d => d.Total);
+        updateChart(labels, values, `Filtered Results ${subject ? " ("+subject+")" : ""}${section ? " Section "+section : ""}`);
+      }
+    }
+
+    async function getStudent() {
+      let roll = document.getElementById("rollInput").value;
+      let res = await fetch(`/student/${roll}`);
+      let data = await res.json();
+      if (data.error) { alert(data.error); return; }
+      let labels = ["DM","MEFA","DT","Python"];
+      let values = [data.DM, data.MEFA, data.DT, data.Python];
+      updateChart(labels, values, `Performance of ${data.Name} (Roll ${data["Roll No"]})`);
+    }
+
+    // Show/hide inputs based on export type
+    document.getElementById("exportType").addEventListener("change", function() {
+      document.getElementById("exportRoll").style.display = (this.value === "student") ? "inline" : "none";
+      document.getElementById("exportSection").style.display = (this.value === "section" || this.value === "subject" || this.value === "all") ? "inline" : "none";
+      document.getElementById("exportSubject").style.display = (this.value === "subject" || this.value === "section" || this.value === "all" || this.value === "student") ? "inline" : "none";
+    });
+
+    function downloadCSV() {
+      let type = document.getElementById("exportType").value;
+      let url = `/export?mode=${type}`;
+
+      if (type === "student") {
+        let roll = document.getElementById("exportRoll").value;
+        if (!roll) { alert("Enter Roll No"); return; }
+        url += `&roll_no=${roll}`;
+      }
+      if (type === "section" || type === "subject" || type === "all") {
+        let sec = document.getElementById("exportSection").value;
+        if (sec) url += `&section=${sec}`;
+      }
+      if (type === "subject" || type === "section" || type === "all" || type === "student") {
+        let subj = document.getElementById("exportSubject").value;
+        if (subj) url += `&subject=${subj}`;
+      }
+
+      window.location.href = url;
+    }
+  </script>
+</body>
+</html>
